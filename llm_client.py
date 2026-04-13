@@ -1,4 +1,5 @@
 import os
+import httpx
 from openai import OpenAI
 from dotenv import load_dotenv
 from typing import List, Dict
@@ -22,9 +23,14 @@ class HelloAgentsLLM:
         timeout = timeout or int(os.getenv("LLM_TIMEOUT", 60))
         
         if not all([self.model, apiKey, baseUrl]):
-            raise ValueError("模型ID、API密钥和服务地址必须被提供或在.env文件中定义。")
+            raise ValueError("模型 ID、API 密钥和服务地址必须被提供或在.env 文件中定义。")
 
-        self.client = OpenAI(api_key=apiKey, base_url=baseUrl, timeout=timeout)
+        self.client = OpenAI(
+            api_key=apiKey, 
+            base_url=baseUrl, 
+            timeout=timeout,
+            http_client=httpx.Client(verify=False)
+        )
 
     def think(self, messages: List[Dict[str, str]], temperature: float = 0) -> str:
         """
