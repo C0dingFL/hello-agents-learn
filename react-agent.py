@@ -1,5 +1,5 @@
 from llm_client import HelloAgentsLLM
-from tools import ToolExecutor
+from tools import ToolExecutor,search
 import re
 
 # ReAct 提示词模板
@@ -89,7 +89,16 @@ class ReActAgent:
                 observation = f"错误:未找到名为 '{tool_name}' 的工具。"
             else:
                 observation = tool_function(tool_input) # 调用真实工具
-
+            # (这段逻辑紧随工具调用之后，在 while 循环的末尾)
+            print(f"👀 观察: {observation}")
+            
+            # 将本轮的Action和Observation添加到历史记录中
+            self.history.append(f"Action: {action}")
+            self.history.append(f"Observation: {observation}")
+        # 循环结束
+        print("已达到最大步数，流程终止。")
+        return None
+        
     # (这些方法是 ReActAgent 类的一部分)
     def _parse_output(self, text: str):
         """
@@ -104,10 +113,21 @@ class ReActAgent:
         return thought, action
 
     def _parse_action(self, action_text: str):
-        """解析Action字符串，提取工具名称和输入。
+        """
+        解析Action字符串，提取工具名称和输入。
         """
         match = re.match(r"(\w+)\[(.*)\]", action_text, re.DOTALL)
         if match:
             return match.group(1), match.group(2)
         return None, None
 
+
+
+if __name__ == '__main__':
+    # 1. 初始化LLM客户端和工具执行器
+    llm_client = HelloAgentsLLM()
+    toolExecutor = ToolExecutor()
+    react_agent = ReActAgent(llm_client, toolExecutor)
+    search_description = "一个网页搜索引擎。当你需要回答关于时事、事实以及在你的知识库中找不到的信息时，应使用此工具。"
+    toolExecutor.registerTool("Search", search_description, search)
+    react_agent.run("华为最新发布的手机型号是什么")
