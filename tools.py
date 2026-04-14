@@ -1,8 +1,31 @@
 import os
+import re
+import ast
 from serpapi import SerpApiClient
 from dotenv import load_dotenv
 from typing import Dict, Any
 load_dotenv()
+
+def calculate(expression: str) -> str:
+    """
+    一个安全的数学计算器工具。
+    它可以处理复杂的数学表达式，如加法、减法、乘法、除法、括号等。
+    """
+    print(f"🧮 正在执行 [Calculator] 计算: {expression}")
+    try:
+        expression = expression.strip()
+        
+        # 验证表达式，只允许数学相关的字符
+        if not re.match(r'^[0-9\s+\-*/().]+$', expression):
+            return "错误:表达式包含无效字符，只允许数字、运算符(+,-,*,/)和括号。"
+        result = eval(expression, {'__builtins__': None}, {})
+        return f"计算结果: {result}"
+    except SyntaxError:
+        return "错误:表达式语法错误，请检查输入。"
+    except ZeroDivisionError:
+        return "错误:除数不能为零。"
+    except Exception as e:
+        return f"计算时发生错误: {e}"
 
 def search(query: str) -> str:
     """
@@ -92,9 +115,28 @@ if __name__ == '__main__':
     print(toolExecutor.getAvailableTools())
 
     # 4. 智能体的Action调用，这次我们问一个实时性的问题
-    print("\n--- 执行 Action: Search['英伟达最新的GPU型号是什么'] ---")
-    tool_name = "Search"
-    tool_input = "英伟达最新的GPU型号是什么"
+    # print("\n--- 执行 Action: Search['英伟达最新的GPU型号是什么'] ---")
+    # tool_name = "Search"
+    # tool_input = "英伟达最新的GPU型号是什么"
+
+    # tool_function = toolExecutor.getTool(tool_name)
+    # if tool_function:
+    #     observation = tool_function(tool_input)
+    #     print("--- 观察 (Observation) ---")
+    #     print(observation)
+    # else:
+    #     print(f"错误:未找到名为 '{tool_name}' 的工具。")
+    
+    new_tool_name = "Calculator"
+    new_tool_description = "一个安全的数学计算器工具。"
+    toolExecutor.registerTool(new_tool_name, new_tool_description, calculate)
+    print("\n--- 可用的工具 ---")
+    print(toolExecutor.getAvailableTools())
+    
+    # 5. 智能体的Action调用，这次我们问一个计算问题
+    print("\n--- 执行 Action: Calculator['2 + 3 = ?'] ---")
+    tool_name = new_tool_name
+    tool_input = "2 + 3"
 
     tool_function = toolExecutor.getTool(tool_name)
     if tool_function:
